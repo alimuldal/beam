@@ -70,6 +70,7 @@ class NativeTypeCompatibilityTest(unittest.TestCase):
         ('simple dict', typing.Dict[bytes, int],
          typehints.Dict[bytes, int]),
         ('simple list', typing.List[int], typehints.List[int]),
+        ('simple sequence', typing.Sequence[int], typehints.Sequence[int]),
         ('simple iterable', typing.Iterable[int], typehints.Iterable[int]),
         ('simple optional', typing.Optional[int], typehints.Optional[int]),
         ('simple set', typing.Set[float], typehints.Set[float]),
@@ -84,6 +85,8 @@ class NativeTypeCompatibilityTest(unittest.TestCase):
         ('test class', _TestClass, _TestClass),
         ('test class in list', typing.List[_TestClass],
          typehints.List[_TestClass]),
+        ('test class in sequence', typing.Sequence[_TestClass],
+         typehints.Sequence[_TestClass]),
         ('generic bare', _TestGeneric, _TestGeneric),
         ('generic subscripted', _TestGeneric[int], _TestGeneric[int]),
         ('complex tuple', typing.Tuple[bytes, typing.List[typing.Tuple[
@@ -112,6 +115,9 @@ class NativeTypeCompatibilityTest(unittest.TestCase):
          typehints.List[_TestGeneric[int]]),
         ('nested generic with any', typing.List[_TestPair[typing.Any]],
          typehints.List[_TestPair[typing.Any]]),
+        ('nested generic sequence with any',
+         typing.Sequence[_TestPair[typing.Any]],
+         typehints.Sequence[_TestPair[typing.Any]]),
         ('raw enum', _TestEnum, _TestEnum),
     ]
 
@@ -198,6 +204,14 @@ class NativeTypeCompatibilityTest(unittest.TestCase):
               'collection of tuples',
               collections.abc.Collection[tuple[str, int]],
               typehints.Collection[typehints.Tuple[str, int]]),
+          (
+              'sequence of enums',
+              collections.abc.Sequence[_TestEnum],
+              typehints.Sequence[_TestEnum]),
+          (
+              'sequence of tuples',
+              collections.abc.Sequence[tuple[str, int]],
+              typehints.Sequence[typehints.Tuple[str, int]]),
       ]
 
       for test_case in test_cases:
@@ -260,11 +274,18 @@ class NativeTypeCompatibilityTest(unittest.TestCase):
     self.assertEqual(
         typehints.List[typing.Dict[int, str]],
         typehints.List[typehints.Dict[int, str]])
+    self.assertEqual(
+        typehints.Sequence[typing.Dict[int, str]],
+        typehints.Sequence[typehints.Dict[int, str]])
 
   def test_convert_bare_types(self):
     # Conversions for unsubscripted types that have implicit subscripts.
     test_cases = [
         ('bare list', typing.List, typehints.List[typehints.TypeVariable('T')]),
+        (
+            'bare sequence',
+            typing.Sequence,
+            typehints.Sequence[typehints.TypeVariable('T')]),
         (
             'bare dict',
             typing.Dict,
@@ -324,12 +345,16 @@ class NativeTypeCompatibilityTest(unittest.TestCase):
         bytes,
         typing.List[bytes],
         typing.List[typing.Tuple[bytes, int]],
+        typing.Sequence[bytes],
+        typing.Sequence[typing.Tuple[bytes, int]],
         typing.Union[int, typing.List[int]]
     ]
     beam_types = [
         bytes,
         typehints.List[bytes],
         typehints.List[typehints.Tuple[bytes, int]],
+        typehints.Sequence[bytes],
+        typehints.Sequence[typehints.Tuple[bytes, int]],
         typehints.Union[int, typehints.List[int]]
     ]
     converted_beam_types = convert_to_beam_types(typing_types)

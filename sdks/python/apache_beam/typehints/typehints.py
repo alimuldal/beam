@@ -78,6 +78,7 @@ __all__ = [
     'Optional',
     'Tuple',
     'List',
+    'Sequence',
     'KV',
     'Dict',
     'Set',
@@ -786,6 +787,37 @@ TupleConstraint = TupleHint.TupleConstraint
 TupleSequenceConstraint = TupleHint.TupleSequenceConstraint
 
 
+class SequenceHint(CompositeTypeHint):
+  """A Sequence type-hint.
+
+  Sequence[X] represents an instance of a sequence populated by a single
+  homogeneous type. The parameterized type 'X' can either be a built-in Python
+  type or an instance of another TypeConstraint.
+
+    * ['1', '2', '3'] satisfies Sequence[str]
+    * (1, 2, 3) satisfies Sequence[int]
+  """
+  class SequenceConstraint(SequenceTypeConstraint):
+    def __init__(self, element_type):
+      super().__init__(element_type, object)
+
+    def __repr__(self):
+      return 'Sequence[%s]' % repr(self.inner_type)
+
+    def _consistent_with_check_(self, sub):
+      return (
+          isinstance(sub, SequenceTypeConstraint) and
+          is_consistent_with(sub.inner_type, self.inner_type))
+
+  def __getitem__(self, t):
+    validate_composite_type_param(t, error_msg_prefix='Parameter to Sequence hint')
+
+    return self.SequenceConstraint(t)
+
+
+SequenceConstraint = SequenceHint.SequenceConstraint
+
+
 class ListHint(CompositeTypeHint):
   """A List type-hint.
 
@@ -1244,6 +1276,7 @@ Union = UnionHint()
 Optional = OptionalHint()
 Tuple = TupleHint()
 List = ListHint()
+Sequence = SequenceHint()
 KV = KVHint()
 Dict = DictHint()
 Set = SetHint()

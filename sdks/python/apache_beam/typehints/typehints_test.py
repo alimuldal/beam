@@ -551,6 +551,82 @@ class TupleHintTestCase(TypeHintTestCase):
       self.assertCompatible(tuple[int, int], typing.Tuple[int, int])
 
 
+class SequenceHintTestCase(TypeHintTestCase):
+  def test_getitem_invalid_composite_type_param(self):
+    with self.assertRaises(TypeError):
+      typehints.Sequence[4]
+
+  def test_sequence_type_constraint_compatibility(self):
+    hint1 = typehints.Sequence[typehints.Any]
+    hint2 = typehints.List[typehints.Any]
+
+    self.assertCompatible(hint1, hint1)
+    self.assertCompatible(hint1, hint2)
+    self.assertNotCompatible(hint2, hint1)
+
+  def test_element_type_constraint_compatibility(self):
+    hint1 = typehints.Sequence[typehints.Tuple[int, str]]
+    hint2 = typehints.Sequence[typehints.Tuple[float, bool]]
+
+    self.assertCompatible(hint1, hint1)
+    self.assertNotCompatible(hint1, hint2)
+
+    self.assertCompatible(typehints.Sequence[SuperClass], typehints.Sequence[SubClass])
+
+  def test_sequence_repr(self):
+    hint = (typehints.Sequence[typehints.Tuple[DummyTestClass1, DummyTestClass2]])
+    self.assertEqual(
+        'Sequence[Tuple[<class \'apache_beam.typehints.typehints_test.'
+        'DummyTestClass1\'>, <class \'apache_beam.typehints.typehints_test.'
+        'DummyTestClass2\'>]]',
+        repr(hint))
+
+  def test_enforce_sequence_type_constraint_valid_simple_type(self):
+    hint = typehints.Sequence[int]
+    self.assertIsNone(hint.type_check([1, 2, 3]))
+
+  def test_enforce_sequence_type_constraint_valid_composite_type(self):
+    hint = typehints.Sequence[DummyTestClass1]
+    l = [DummyTestClass1(), DummyTestClass1()]
+    self.assertIsNone(hint.type_check(l))
+
+  def test_enforce_sequence_type_constraint_invalid_simple_type(self):
+    hint = typehints.Sequence[int]
+    l = ['f', 'd', 'm']
+    with self.assertRaises(TypeError) as e:
+      hint.type_check(l)
+    self.assertEqual(
+        'Sequence[<class \'int\'>] hint type-constraint violated. The type of '
+        'element #0 in the passed <class \'object\'> is incorrect. Expected '
+        'an instance of type <class \'int\'>, instead received an instance of '
+        'type str.',
+        e.exception.args[0])
+
+  def test_enforce_sequence_type_constraint_invalid_composite_type(self):
+    hint = typehints.Sequence[typehints.Tuple[int, int]]
+    l = [('f', 1), ('m', 5)]
+    with self.assertRaises(TypeError) as e:
+      hint.type_check(l)
+
+    self.assertEqual(
+        'Sequence[Tuple[<class \'int\'>, <class \'int\'>]] hint '
+        'type-constraint violated. The type of element #0 in the passed '
+        'object is incorrect: Tuple[<class \'int\'>, <class \'int\'>] hint '
+        'type-constraint violated. The type of element #0 in the passed tuple'
+        ' is incorrect. Expected an instance of type <class \'int\'>, '
+        'instead received an instance of type str.',
+        e.exception.args[0])
+
+  def test_normalize_with_builtin_sequence(self):
+    if sys.version_info >= (3, 9):
+      expected_beam_type = typehints.Sequence[int]
+      converted_beam_type = typehints.normalize(typing.Sequence[int], False)
+      self.assertEqual(converted_beam_type, expected_beam_type)
+
+  def test_is_typing_generic(self):
+    self.assertTrue(typehints.is_typing_generic(typing.Sequence[str]))
+
+
 class ListHintTestCase(TypeHintTestCase):
   def test_getitem_invalid_composite_type_param(self):
     with self.assertRaises(TypeError):
