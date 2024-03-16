@@ -557,19 +557,39 @@ class SequenceHintTestCase(TypeHintTestCase):
       typehints.Sequence[4]
 
   def test_sequence_type_constraint_compatibility(self):
-    hint1 = typehints.Sequence[typehints.Any]
-    hint2 = typehints.List[typehints.Any]
+    sequence_any = typehints.Sequence[typehints.Any]
+    list_any = typehints.List[typehints.Any]
+    fixed_length_tuple_any = typehints.Tuple[typehints.Any]
+    variable_length_tuple_any = typehints.Tuple[typehints.Any, ...]
 
-    self.assertCompatible(hint1, hint1)
-    self.assertCompatible(hint1, hint2)
-    self.assertNotCompatible(hint2, hint1)
+    self.assertCompatible(base=sequence_any, sub=sequence_any)
+    self.assertCompatible(base=sequence_any, sub=list_any)
+    self.assertCompatible(base=sequence_any, sub=fixed_length_tuple_any)
+    self.assertCompatible(base=sequence_any, sub=variable_length_tuple_any)
+    self.assertNotCompatible(base=list_any, sub=sequence_any)
+    self.assertNotCompatible(base=fixed_length_tuple_any, sub=sequence_any)
+    self.assertNotCompatible(base=variable_length_tuple_any, sub=sequence_any)
+
 
   def test_element_type_constraint_compatibility(self):
-    hint1 = typehints.Sequence[typehints.Tuple[int, str]]
-    hint2 = typehints.Sequence[typehints.Tuple[float, bool]]
+    sequence_int = typehints.Sequence[int]
+    tuple_int_int = typehints.Tuple[int, int]
+    tuple_var_int = typehints.Tuple[int, ...]
+    tuple_var_str = typehints.Tuple[str, ...]
+    tuple_int_str = typehints.Tuple[int, str]
+    sequence_int_str = typehints.Sequence[typehints.Tuple[int, str]]
+    sequence_float_bool = typehints.Sequence[typehints.Tuple[float, bool]]
 
-    self.assertCompatible(hint1, hint1)
-    self.assertNotCompatible(hint1, hint2)
+    self.assertCompatible(base=sequence_int, sub=sequence_int)
+    self.assertCompatible(base=sequence_int, sub=tuple_int_int)
+    self.assertCompatible(base=sequence_int, sub=tuple_var_int)
+    self.assertNotCompatible(base=sequence_int, sub=tuple_int_str)
+    self.assertNotCompatible(base=sequence_int, sub=tuple_var_str)
+
+    self.assertCompatible(base=sequence_int_str, sub=sequence_int_str)
+    self.assertCompatible(base=sequence_float_bool, sub=sequence_float_bool)
+    self.assertNotCompatible(base=sequence_int_str, sub=sequence_float_bool)
+    self.assertNotCompatible(base=sequence_float_bool, sub=sequence_int_str)
 
     self.assertCompatible(typehints.Sequence[SuperClass], typehints.Sequence[SubClass])
 

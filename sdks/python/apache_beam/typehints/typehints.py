@@ -805,9 +805,12 @@ class SequenceHint(CompositeTypeHint):
       return 'Sequence[%s]' % repr(self.inner_type)
 
     def _consistent_with_check_(self, sub):
-      return (
-          isinstance(sub, SequenceTypeConstraint) and
-          is_consistent_with(sub.inner_type, self.inner_type))
+      if isinstance(sub, TupleConstraint):
+        return all(
+          is_consistent_with(t, self.inner_type) for t in sub.tuple_types)
+      elif isinstance(sub, (SequenceTypeConstraint, TupleSequenceConstraint)):
+        return is_consistent_with(sub.inner_type, self.inner_type)
+      return False
 
   def __getitem__(self, t):
     validate_composite_type_param(t, error_msg_prefix='Parameter to Sequence hint')
